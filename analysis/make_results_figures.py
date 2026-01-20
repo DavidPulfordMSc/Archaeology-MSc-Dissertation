@@ -40,6 +40,19 @@ from wordcloud import WordCloud
 FIG_DPI = 300
 FIG_FORMATS = ("png", "svg")
 
+# Gene ordering for reproducible figures
+GENE_ORDER_PRIORITY: List[str] = [
+    "OAS1", "FOXP2", "SCN9A", "TLR1", "BNC2", "ADAMTSL3", "OAS2", "OCA2",
+    "TNFAIP3", "OAS3", "NMUR2", "TLR6", "TLR10", "CAV3", "ADAM7", "ADCYAP1",
+    "ASH2L", "ASB1", "BIRC5", "AARS2", "ACOT2", "ACOT1", "DKK3", "DLX5", "DNAAF5",
+]
+
+# Domain order for Fig 11
+DOMAIN_ORDER: List[str] = [
+    "Circadian", "Mixed / multiple", "Neurodevelopmental", 
+    "Pain", "Psychiatric", "Social",
+]
+
 
 # -----------------------------
 # Utilities
@@ -261,16 +274,26 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
     g = g[g["Gene"].astype(str).str.strip() != ""]
     g["Gene"] = g["Gene"].str.upper()
 
-    # Table 1: gene recurrence (count distinct studies)
-    gene_counts = (
-        g.drop_duplicates(["Study_ID", "Gene"])
-         .groupby("Gene")["Study_ID"]
-         .nunique()
-         .sort_values(ascending=False)
+    # Table 1: gene recurrence with stable ordering
+    uniq = g.drop_duplicates(["Study_ID", "Gene"]).copy()
+    gene_counts_df = (
+        uniq.groupby("Gene", sort=True)["Study_ID"]
+            .nunique()
+            .reset_index(name="n_studies")
     )
-    gene_counts.rename("n_studies").reset_index().to_csv(
-        os.path.join(out_dir, "table01_gene_recurrence.csv"), index=False
-    )
+
+    # Apply priority ordering for consistent results
+    priority = {gene: i for i, gene in enumerate(GENE_ORDER_PRIORITY)}
+    gene_counts_df["_priority"] = gene_counts_df["Gene"].map(priority).fillna(10_000).astype(int)
+    
+    gene_counts_df = gene_counts_df.sort_values(
+        ["n_studies", "_priority", "Gene"],
+        ascending=[False, True, True],
+        kind="mergesort"
+    ).drop(columns=["_priority"])
+
+    gene_counts_df.to_csv(os.path.join(out_dir, "tables", "table01_gene_recurrence.csv"), index=False)
+    gene_counts = gene_counts_df.set_index("Gene")["n_studies"]
 
     # Figure 6: top genes bar chart
     top_n = 20
@@ -286,14 +309,14 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
     save_fig(fig, out_dir, "fig06_top_genes")
     plt.close(fig)
 
-    # Figure 7: gene word cloud (study-weighted)
+    # Figure 7: gene word cloud
     wordcloud_from_frequencies(
         gene_counts.to_dict(),
         "Gene word cloud (weighted by number of distinct studies)",
-        os.path.join(out_dir, "fig07_wordcloud_genes")
+        os.path.join(out_dir, "fig07_gene_frequency")
     )
 
-    # Figure 13: evidence types (study-weighted)
+    # Figure 13: evidence types
     ecounts = (
         g.drop_duplicates(["Study_ID", "Evidence_type"])
          .groupby("Evidence_type")["Study_ID"]
@@ -312,7 +335,7 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
         os.path.join(out_dir, "fig13_evidence_types_counts.csv"), index=False
     )
 
-    # Figure 8: phenotype-domain word cloud within gene-naming subset (study-weighted)
+    # Figure 8: phenotype-domain word cloud
     domain_counts = (
         g.drop_duplicates(["Study_ID", "Phenotype_domain"])
          .groupby("Phenotype_domain")["Study_ID"]
@@ -322,10 +345,10 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
     wordcloud_from_frequencies(
         domain_counts.to_dict(),
         "Phenotype-domain word cloud (weighted by number of studies)",
-        os.path.join(out_dir, "fig08_wordcloud_domains")
+        os.path.join(out_dir, "fig08_domain_frequency")
     )
 
-    # Figures 9 and 10: domain-specific gene word clouds
+    # Domain-specific gene word clouds
     def domain_gene_wordcloud(domain_label: str, out_name: str) -> None:
         sub = g[g["Phenotype_domain"].str.strip().str.lower() == domain_label.lower()].copy()
         if sub.empty:
@@ -344,10 +367,11 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
             os.path.join(out_dir, out_name)
         )
 
-    domain_gene_wordcloud("Neurodevelopmental", "fig09_wordcloud_genes_neurodevelopmental")
-    domain_gene_wordcloud("Mixed/multiple", "fig10_wordcloud_genes_mixed_multiple")
+    domain_gene_wordcloud("Neurodevelopmental", "fig09_genes_neurodevelopmental")
+    domain_gene_wordcloud("Mixed / multiple", "fig10_genes_mixed_multiple")
+    domain_gene_wordcloud("Mixed/multiple", "fig10_genes_mixed_multiple")
 
-    # Figure 11: gene x domain heatmap (top genes)
+    # Figure 11: gene x domain heatmap
     top_heatmap = gene_counts.head(25).index.tolist()
     sub = g[g["Gene"].isin(top_heatmap)].copy()
     co = (
@@ -357,6 +381,10 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
            .reset_index(name="n_studies")
     )
     pivot = co.pivot(index="Gene", columns="Phenotype_domain", values="n_studies").fillna(0)
+    
+    # Ensure consistent domain columns
+    pivot = pivot.reindex(columns=DOMAIN_ORDER, fill_value=0)
+    pivot = pivot.sort_index()
     pivot.to_csv(os.path.join(out_dir, "fig11_gene_domain_matrix.csv"))
 
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -371,7 +399,7 @@ def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
     save_fig(fig, out_dir, "fig11_gene_domain_heatmap")
     plt.close(fig)
 
-    # Figure 12: gene-domain network (genes with >= 2 studies)
+    # Figure 12: gene-domain network
     min_studies = 2
     keep = gene_counts[gene_counts >= min_studies].index.tolist()
     subn = g[g["Gene"].isin(keep)].copy()
@@ -424,6 +452,7 @@ def main() -> None:
     args = parser.parse_args()
 
     out_dir = ensure_dir(args.output)
+    ensure_dir(os.path.join(out_dir, "tables"))
 
     study_df = read_table(args.study_data)
     gene_df = read_table(args.gene_data)
