@@ -1,472 +1,151 @@
-#!/usr/bin/env python3
-"""
-make_results_figures.py
-
-Generate the descriptive figures and tables reported in the dissertation Results section.
-
-This script is deliberately limited to descriptive summaries. It does not attempt to
-pool effect sizes or infer causal directionality.
-
-Inputs (preferred):
-- study_level_n33.csv (study-level, locus-extractable subset)
-- gene_level_summary.csv (gene-level extraction table)
-
-Outputs:
-- PNG and SVG figures
-- CSV tables supporting figures
-
-Author: David Pulford
-Year: 2026
-"""
-
-from __future__ import annotations
-
-import argparse
 import os
 import re
-from pathlib import Path
-from typing import List, Dict, Optional
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 from wordcloud import WordCloud
 
+# --- DISSERTATION CONFIG ---
+# Paths for the datasets used in the Results section
+STUDY_DATA = "study_level_n33.csv"  # The 33-study locus-resolved subset
+GENE_DATA = "gene_level_summary.csv" 
+OUT_DIR = "outputs/figures"
 
-# -----------------------------
-# Configuration
-# -----------------------------
+# Ensure output folders exist
+if not os.path.exists(OUT_DIR):
+    os.makedirs(OUT_DIR)
+if not os.path.exists(OUT_DIR + "/tables"):
+    os.makedirs(OUT_DIR + "/tables")
 
-FIG_DPI = 300
-FIG_FORMATS = ("png", "svg")
-
-# Gene ordering for reproducible figures
-GENE_ORDER_PRIORITY: List[str] = [
-    "OAS1", "FOXP2", "SCN9A", "TLR1", "BNC2", "ADAMTSL3", "OAS2", "OCA2",
-    "TNFAIP3", "OAS3", "NMUR2", "TLR6", "TLR10", "CAV3", "ADAM7", "ADCYAP1",
-    "ASH2L", "ASB1", "BIRC5", "AARS2", "ACOT2", "ACOT1", "DKK3", "DLX5", "DNAAF5",
-]
-
-# Domain order for Fig 11
-DOMAIN_ORDER: List[str] = [
+# Domain order as defined in the dissertation text (Fig 11)
+# Includes specific categories: Circadian, Pain, Psychiatric, etc.
+DOMAIN_ORDER = [
     "Circadian", "Mixed / multiple", "Neurodevelopmental", 
-    "Pain", "Psychiatric", "Social",
+    "Pain", "Psychiatric", "Social"
 ]
 
-
-# -----------------------------
-# Utilities
-# -----------------------------
-
-def ensure_dir(path: str) -> str:
-    Path(path).mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def save_fig(fig: plt.Figure, out_dir: str, name: str) -> None:
-    for ext in FIG_FORMATS:
-        fig.savefig(os.path.join(out_dir, f"{name}.{ext}"), dpi=FIG_DPI, bbox_inches="tight")
-
-
-def read_table(path: str) -> pd.DataFrame:
-    """
-    Read CSV or Excel into a dataframe.
-    """
-    lower = path.lower()
-    if lower.endswith(".csv"):
-        return pd.read_csv(path)
-    if lower.endswith(".xlsx") or lower.endswith(".xls"):
-        return pd.read_excel(path)
-    raise ValueError(f"Unsupported file type: {path}")
-
-
-def clean_text_series(s: pd.Series) -> pd.Series:
-    return s.astype(str).str.strip()
-
-
-def drop_accidental_header_rows(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Remove rows where a cell contains the column name itself.
-    This occasionally happens when copying from spreadsheets.
-    """
-    for c in df.columns:
-        if df[c].dtype == object:
-            df = df[df[c].astype(str).str.strip().str.lower() != str(c).strip().lower()]
-    return df
-
-
-# -----------------------------
-# Normalisation helpers
-# -----------------------------
-
-DOMAIN_MAP: Dict[str, str] = {
-    "cognitive": "Cognition",
-    "cognition": "Cognition",
-    "psychiatric": "Psychiatric",
-    "neurodevelopment": "Neurodevelopmental",
-    "neurodevelopmental": "Neurodevelopmental",
-    "circadian": "Circadian",
-    "chronotype": "Circadian",
-    "sleep": "Circadian",
-    "addiction": "Addiction",
-    "smoking": "Addiction",
-    "pain": "Pain",
-    "social": "Social",
-    "language": "Cognition",
-    "brain": "Brain structure/imaging",
-    "neuroimaging": "Brain structure/imaging",
-    "cranial": "Brain structure/imaging",
-    "none": "None/Context only",
-    "mixed": "Mixed/multiple",
-    "multiple": "Mixed/multiple",
+# Map for cleaning the Phenotype_domains column
+DOMAIN_MAP = {
+    "cognitive": "Cognition", "psychiatric": "Psychiatric",
+    "neurodevelopment": "Neurodevelopmental", "circadian": "Circadian",
+    "sleep": "Circadian", "pain": "Pain", "social": "Social",
+    "mixed": "Mixed/multiple", "multiple": "Mixed/multiple"
 }
 
-def normalise_domains(raw: str) -> List[str]:
-    if pd.isna(raw) or str(raw).strip() == "":
-        return []
-    parts = re.split(r"[;,/|]+", str(raw))
-    out: List[str] = []
-    for p in parts:
-        t = p.strip().lower()
-        if not t:
-            continue
-        mapped: Optional[str] = None
-        for k, v in DOMAIN_MAP.items():
-            if k in t:
-                mapped = v
-                break
-        out.append(mapped if mapped else "Other")
-    return sorted(set(out))
+# --- FUNCTIONS ---
 
-
-def normalise_study_type(raw: str) -> str:
-    if pd.isna(raw):
-        return "Not reported"
-    t = str(raw).lower()
-
-    if any(x in t for x in ["gwas", "phewas", "uk biobank"]):
-        return "GWAS/PheWAS association"
-    if any(x in t for x in ["heritab", "ldsc", "partition"]):
-        return "Heritability/enrichment"
-    if any(x in t for x in ["eqtl", "gtex", "expression", "transcript"]):
-        return "Gene expression / eQTL"
-    if "splic" in t:
-        return "Splicing / isoform"
-    if any(x in t for x in ["organoid", "crispr", "functional", "assay", "reporter"]):
-        return "Functional validation"
-    if any(x in t for x in ["selection", "adaptive", "introgression", "population"]):
-        return "Population genetics / introgression"
-    if any(x in t for x in ["review", "framework"]):
-        return "Review / synthesis"
-    if any(x in t for x in ["archaeolog", "petri", "tar"]):
-        return "Archaeological context"
-
+def get_study_type(text):
+    """Categorises study design for Fig 03 (Composition of Evidence)"""
+    t = str(text).lower()
+    if any(x in t for x in ["gwas", "phewas"]): return "GWAS/PheWAS association"
+    if any(x in t for x in ["eqtl", "expression"]): return "Gene expression / eQTL"
+    if any(x in t for x in ["functional", "assay", "organoid"]): return "Functional validation"
+    if any(x in t for x in ["selection", "introgression"]): return "Population genetics"
     return "Other / mixed"
 
+def get_resolution(text):
+    """Categorises biological resolution for Fig 05"""
+    t = str(text).lower()
+    if "variant" in t or "snp" in t: return "Variant-level (SNP/rsID)"
+    if "gene" in t: return "Gene-level"
+    if "region" in t or "haplotype" in t: return "Region/haplotype"
+    return "Genome-wide only"
 
-def normalise_loci_level(raw: str) -> str:
-    if pd.isna(raw):
-        return "Not reported"
-    t = str(raw).lower()
+# --- MAIN ANALYSIS ---
 
-    if any(x in t for x in ["genome-wide", "burden", "enrichment", "score"]):
-        if any(x in t for x in ["rs", "snp", "variant", "haplotype", "region", "gene"]):
-            return "Mixed (genome-wide + loci)"
-        return "Genome-wide only"
-    if any(x in t for x in ["rs", "snp", "variant"]):
-        return "Variant-level (SNP/rsID)"
-    if any(x in t for x in ["haplotype", "region", "tract", "segment"]):
-        return "Region/haplotype"
-    if any(x in t for x in ["gene", "locus"]):
-        return "Gene-level"
-    return "Mixed/unclear"
+print("Reading dissertation datasets...")
+# Loading the core 33 studies identified in the PRISMA flow (Fig 2)
+df_study = pd.read_csv(STUDY_DATA)
+df_gene = pd.read_csv(GENE_DATA)
 
+# 1. Evidence Base Composition (Fig 03)
+print("Plotting Figure 3: Study Types...")
+df_study['Type_Norm'] = df_study['Study_type'].apply(get_study_type)
+type_counts = df_study['Type_Norm'].value_counts()
+plt.figure(figsize=(10, 6))
+type_counts.plot(kind='bar', color='skyblue')
+plt.title("Figure 3: Composition of the Evidence Base (n=33)")
+plt.ylabel("Number of Studies")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}/fig03_study_types.png", dpi=300)
 
-# -----------------------------
-# Plot helpers
-# -----------------------------
+# 2. Trait Domain Distribution (Fig 04)
+# Note: One study can cover multiple domains
+print("Plotting Figure 4: Trait Domains...")
+# Split domains and explode to get counts per domain
+df_study['domain_list'] = df_study['Phenotype_domains'].str.split(';')
+domains_exploded = df_study.explode('domain_list')
+domain_counts = domains_exploded['domain_list'].str.strip().value_counts()
+plt.figure(figsize=(10, 6))
+domain_counts.plot(kind='bar', color='salmon')
+plt.title("Figure 4: Trait-Domain Distribution")
+plt.ylabel("Number of Studies")
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}/fig04_trait_domains.png", dpi=300)
 
-def bar_plot(categories: List[str], counts: List[int], title: str, ylabel: str, out_path_base: str) -> None:
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.bar(categories, counts)
-    ax.set_title(title)
-    ax.set_ylabel(ylabel)
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    save_fig(fig, os.path.dirname(out_path_base), os.path.basename(out_path_base))
-    plt.close(fig)
+# 3. Biological Resolution (Fig 05)
+print("Plotting Figure 5: Biological Resolution...")
+df_study['Res_Norm'] = df_study['Loci_level'].apply(get_resolution)
+res_counts = df_study['Res_Norm'].value_counts()
+plt.figure(figsize=(10, 6))
+res_counts.plot(kind='bar', color='lightgreen')
+plt.title("Figure 5: Resolution of Introgression Evidence")
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}/fig05_loci_resolution.png", dpi=300)
 
+# 4. Gene Recurrence Analysis (Table 1 & Fig 06)
+print("Analysing gene recurrence...")
+# Clean gene names (ensure uppercase for OAS1, TLR, etc.)
+df_gene['Gene'] = df_gene['Gene'].astype(str).str.strip().str.upper()
+# Count unique studies per gene
+gene_stats = df_gene.drop_duplicates(['Study_ID', 'Gene']).groupby('Gene')['Study_ID'].nunique().sort_values(ascending=False)
+gene_stats.to_csv(f"{OUT_DIR}/tables/table01_gene_recurrence.csv")
 
-def wordcloud_from_frequencies(freq: Dict[str, int], title: str, out_path_base: str) -> None:
-    wc = WordCloud(width=1600, height=800, background_color="white").generate_from_frequencies(freq)
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.imshow(wc, interpolation="bilinear")
-    ax.axis("off")
-    ax.set_title(title)
-    save_fig(fig, os.path.dirname(out_path_base), os.path.basename(out_path_base))
-    plt.close(fig)
+# 5. Top Genes Word Cloud (Fig 07)
+print("Generating Fig 7: Gene Word Cloud...")
+word_freq = gene_stats.to_dict()
+wc = WordCloud(width=1200, height=600, background_color="white").generate_from_frequencies(word_freq)
+plt.figure(figsize=(10, 5))
+plt.imshow(wc, interpolation='bilinear')
+plt.axis("off")
+plt.title("Figure 7: Gene Emphasis (Weighted by Study Count)")
+plt.savefig(f"{OUT_DIR}/fig07_gene_frequency.png")
 
+# 6. Gene-Domain Heatmap (Fig 11)
+print("Generating Fig 11: Heatmap...")
+top_genes = gene_stats.head(20).index.tolist()
+subset = df_gene[df_gene['Gene'].isin(top_genes)]
+# Pivot to get Gene vs Domain counts
+heatmap_data = subset.drop_duplicates(['Study_ID', 'Gene', 'Phenotype_domain'])
+pivot = heatmap_data.groupby(['Gene', 'Phenotype_domain'])['Study_ID'].nunique().unstack(fill_value=0)
+# Reorder columns to match DOMAIN_ORDER
+pivot = pivot.reindex(columns=DOMAIN_ORDER, fill_value=0)
 
-# -----------------------------
-# Main figure generation
-# -----------------------------
+plt.figure(figsize=(12, 8))
+plt.imshow(pivot.values, cmap="YlOrRd", aspect="auto")
+plt.xticks(range(len(pivot.columns)), pivot.columns, rotation=45, ha="right")
+plt.yticks(range(len(pivot.index)), pivot.index)
+plt.colorbar(label="Number of Studies")
+plt.title("Figure 11: Gene x Phenotype Domain Heatmap")
+plt.tight_layout()
+plt.savefig(f"{OUT_DIR}/fig11_gene_domain_heatmap.png")
 
-def make_study_figures(study_df: pd.DataFrame, out_dir: str) -> None:
-    # Study type distribution
-    st = study_df.copy()
-    st["Study_type_norm"] = st["Study_type"].apply(normalise_study_type)
-    counts = st["Study_type_norm"].value_counts()
-    bar_plot(
-        counts.index.tolist(),
-        counts.values.tolist(),
-        "Studies by study type (normalised)",
-        "Number of studies",
-        os.path.join(out_dir, "fig03_study_types")
-    )
-    counts.reset_index().rename(columns={"index": "Study_type", "Study_type_norm": "Count"}).to_csv(
-        os.path.join(out_dir, "fig03_study_types_counts.csv"), index=False
-    )
+# 7. Gene-Domain Network (Fig 12)
+print("Generating Fig 12: Network Diagram...")
+G = nx.Graph()
+# Only use genes appearing in 2+ studies for clarity
+reliable_genes = gene_stats[gene_stats >= 2].index.tolist()
+net_data = df_gene[df_gene['Gene'].isin(reliable_genes)]
 
-    # Trait domain distribution (each domain counted once per study)
-    td = study_df[["Study_ID", "Phenotype_domains"]].copy()
-    td["domain_list"] = td["Phenotype_domains"].apply(normalise_domains)
-    td_long = td.explode("domain_list").dropna(subset=["domain_list"])
-    td_long = td_long.drop_duplicates(["Study_ID", "domain_list"])
-    dcounts = td_long["domain_list"].value_counts()
+for _, row in net_data.iterrows():
+    if pd.notna(row['Phenotype_domain']):
+        G.add_edge(row['Gene'], row['Phenotype_domain'])
 
-    bar_plot(
-        dcounts.index.tolist(),
-        dcounts.values.tolist(),
-        "Trait domain distribution (normalised)",
-        "Number of studies (domain counted once per study)",
-        os.path.join(out_dir, "fig04_trait_domains")
-    )
-    dcounts.reset_index().rename(columns={"index": "Phenotype_domain", "domain_list": "Count"}).to_csv(
-        os.path.join(out_dir, "fig04_trait_domains_counts.csv"), index=False
-    )
+plt.figure(figsize=(12, 10))
+pos = nx.spring_layout(G, seed=42)
+nx.draw(G, pos, with_labels=True, node_size=800, node_color='lightgrey', font_size=8)
+plt.title("Figure 12: Gene-Phenotype Domain Relationships")
+plt.savefig(f"{OUT_DIR}/fig12_gene_domain_network.png")
 
-    # Loci resolution
-    lr = study_df.copy()
-    lr["Loci_level_norm"] = lr["Loci_level"].apply(normalise_loci_level)
-    lcounts = lr["Loci_level_norm"].value_counts()
-
-    bar_plot(
-        lcounts.index.tolist(),
-        lcounts.values.tolist(),
-        "Resolution of introgression evidence (normalised)",
-        "Number of studies",
-        os.path.join(out_dir, "fig05_loci_resolution")
-    )
-    lcounts.reset_index().rename(columns={"index": "Loci_level_norm", "Loci_level_norm": "Count"}).to_csv(
-        os.path.join(out_dir, "fig05_loci_resolution_counts.csv"), index=False
-    )
-
-
-def make_gene_figures(gene_df: pd.DataFrame, out_dir: str) -> None:
-    g = gene_df.copy()
-
-    # Standardise basic fields
-    for c in ["Study_ID", "Gene", "Phenotype_domain", "Evidence_type"]:
-        g[c] = clean_text_series(g[c])
-
-    g = drop_accidental_header_rows(g)
-    g = g[g["Study_ID"].astype(str).str.strip() != ""]
-    g = g[g["Gene"].astype(str).str.strip() != ""]
-    g["Gene"] = g["Gene"].str.upper()
-
-    # Table 1: gene recurrence with stable ordering
-    uniq = g.drop_duplicates(["Study_ID", "Gene"]).copy()
-    gene_counts_df = (
-        uniq.groupby("Gene", sort=True)["Study_ID"]
-            .nunique()
-            .reset_index(name="n_studies")
-    )
-
-    # Apply priority ordering for consistent results
-    priority = {gene: i for i, gene in enumerate(GENE_ORDER_PRIORITY)}
-    gene_counts_df["_priority"] = gene_counts_df["Gene"].map(priority).fillna(10_000).astype(int)
-    
-    gene_counts_df = gene_counts_df.sort_values(
-        ["n_studies", "_priority", "Gene"],
-        ascending=[False, True, True],
-        kind="mergesort"
-    ).drop(columns=["_priority"])
-
-    gene_counts_df.to_csv(os.path.join(out_dir, "tables", "table01_gene_recurrence.csv"), index=False)
-    gene_counts = gene_counts_df.set_index("Gene")["n_studies"]
-
-    # Figure 6: top genes bar chart
-    top_n = 20
-    top = gene_counts.head(top_n).reset_index()
-    top.columns = ["Gene", "n_studies"]
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(top["Gene"], top["n_studies"])
-    ax.set_title(f"Top {top_n} genes (counted by distinct studies)")
-    ax.set_ylabel("Number of studies")
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    save_fig(fig, out_dir, "fig06_top_genes")
-    plt.close(fig)
-
-    # Figure 7: gene word cloud
-    wordcloud_from_frequencies(
-        gene_counts.to_dict(),
-        "Gene word cloud (weighted by number of distinct studies)",
-        os.path.join(out_dir, "fig07_gene_frequency")
-    )
-
-    # Figure 13: evidence types
-    ecounts = (
-        g.drop_duplicates(["Study_ID", "Evidence_type"])
-         .groupby("Evidence_type")["Study_ID"]
-         .nunique()
-         .sort_values(ascending=False)
-    )
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.bar(ecounts.index.tolist(), ecounts.values.tolist())
-    ax.set_title("Evidence types among gene-naming studies")
-    ax.set_ylabel("Number of studies")
-    plt.xticks(rotation=45, ha="right")
-    plt.tight_layout()
-    save_fig(fig, out_dir, "fig13_evidence_types")
-    plt.close(fig)
-    ecounts.rename("n_studies").reset_index().to_csv(
-        os.path.join(out_dir, "fig13_evidence_types_counts.csv"), index=False
-    )
-
-    # Figure 8: phenotype-domain word cloud
-    domain_counts = (
-        g.drop_duplicates(["Study_ID", "Phenotype_domain"])
-         .groupby("Phenotype_domain")["Study_ID"]
-         .nunique()
-         .sort_values(ascending=False)
-    )
-    wordcloud_from_frequencies(
-        domain_counts.to_dict(),
-        "Phenotype-domain word cloud (weighted by number of studies)",
-        os.path.join(out_dir, "fig08_domain_frequency")
-    )
-
-    # Domain-specific gene word clouds
-    def domain_gene_wordcloud(domain_label: str, out_name: str) -> None:
-        sub = g[g["Phenotype_domain"].str.strip().str.lower() == domain_label.lower()].copy()
-        if sub.empty:
-            return
-        freq = (
-            sub.drop_duplicates(["Study_ID", "Gene"])
-               .groupby("Gene")["Study_ID"]
-               .nunique()
-               .sort_values(ascending=False)
-        )
-        if len(freq) < 3:
-            return
-        wordcloud_from_frequencies(
-            freq.to_dict(),
-            f"Gene word cloud within domain: {domain_label} (study-weighted)",
-            os.path.join(out_dir, out_name)
-        )
-
-    domain_gene_wordcloud("Neurodevelopmental", "fig09_genes_neurodevelopmental")
-    domain_gene_wordcloud("Mixed / multiple", "fig10_genes_mixed_multiple")
-    domain_gene_wordcloud("Mixed/multiple", "fig10_genes_mixed_multiple")
-
-    # Figure 11: gene x domain heatmap
-    top_heatmap = gene_counts.head(25).index.tolist()
-    sub = g[g["Gene"].isin(top_heatmap)].copy()
-    co = (
-        sub.drop_duplicates(["Study_ID", "Gene", "Phenotype_domain"])
-           .groupby(["Gene", "Phenotype_domain"])["Study_ID"]
-           .nunique()
-           .reset_index(name="n_studies")
-    )
-    pivot = co.pivot(index="Gene", columns="Phenotype_domain", values="n_studies").fillna(0)
-    
-    # Ensure consistent domain columns
-    pivot = pivot.reindex(columns=DOMAIN_ORDER, fill_value=0)
-    pivot = pivot.sort_index()
-    pivot.to_csv(os.path.join(out_dir, "fig11_gene_domain_matrix.csv"))
-
-    fig, ax = plt.subplots(figsize=(12, 10))
-    im = ax.imshow(pivot.values, aspect="auto", cmap="YlOrRd")
-    ax.set_xticks(range(len(pivot.columns)))
-    ax.set_xticklabels(pivot.columns, rotation=45, ha="right")
-    ax.set_yticks(range(len(pivot.index)))
-    ax.set_yticklabels(pivot.index)
-    ax.set_title("Gene x phenotype domain (counts by studies)")
-    fig.colorbar(im, ax=ax, label="Number of studies")
-    plt.tight_layout()
-    save_fig(fig, out_dir, "fig11_gene_domain_heatmap")
-    plt.close(fig)
-
-    # Figure 12: gene-domain network
-    min_studies = 2
-    keep = gene_counts[gene_counts >= min_studies].index.tolist()
-    subn = g[g["Gene"].isin(keep)].copy()
-
-    edges = (
-        subn.drop_duplicates(["Study_ID", "Gene", "Phenotype_domain"])
-            .groupby(["Gene", "Phenotype_domain"])["Study_ID"]
-            .nunique()
-            .reset_index(name="weight")
-    )
-
-    G = nx.Graph()
-    for gene in keep:
-        G.add_node(gene, node_type="gene")
-    domains = sorted(subn["Phenotype_domain"].dropna().unique())
-    for dom in domains:
-        G.add_node(dom, node_type="domain")
-
-    for _, row in edges.iterrows():
-        if pd.notna(row["Phenotype_domain"]):
-            G.add_edge(row["Gene"], row["Phenotype_domain"], weight=int(row["weight"]))
-
-    pos = nx.spring_layout(G, seed=42, k=0.8)
-
-    fig, ax = plt.subplots(figsize=(14, 10))
-    gene_nodes = [n for n in G.nodes if G.nodes[n].get("node_type") == "gene"]
-    dom_nodes = [n for n in G.nodes if G.nodes[n].get("node_type") == "domain"]
-
-    nx.draw_networkx_nodes(G, pos, nodelist=gene_nodes, node_size=600, ax=ax)
-    nx.draw_networkx_nodes(G, pos, nodelist=dom_nodes, node_size=800, ax=ax)
-    nx.draw_networkx_edges(G, pos, width=1, alpha=0.6, ax=ax)
-    nx.draw_networkx_labels(G, pos, font_size=8, ax=ax)
-
-    ax.set_title(f"Gene-phenotype domain network (genes with >={min_studies} studies)")
-    ax.axis("off")
-    plt.tight_layout()
-    save_fig(fig, out_dir, "fig12_gene_domain_network")
-    plt.close(fig)
-
-
-# -----------------------------
-# Entrypoint
-# -----------------------------
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Reproduce dissertation Results figures (descriptive).")
-    parser.add_argument("--study-data", required=True, help="Path to study-level dataset (CSV or Excel).")
-    parser.add_argument("--gene-data", required=True, help="Path to gene-level dataset (CSV or Excel).")
-    parser.add_argument("--output", default="outputs/figures", help="Directory for output figures and tables.")
-    args = parser.parse_args()
-
-    out_dir = ensure_dir(args.output)
-    ensure_dir(os.path.join(out_dir, "tables"))
-
-    study_df = read_table(args.study_data)
-    gene_df = read_table(args.gene_data)
-
-    # Basic guard: keep only populated studies
-    if "Study_ID" in study_df.columns:
-        study_df["Study_ID"] = clean_text_series(study_df["Study_ID"])
-        study_df = study_df[study_df["Study_ID"] != ""].copy()
-
-    make_study_figures(study_df, out_dir)
-    make_gene_figures(gene_df, out_dir)
-
-    print(f"Done. Outputs written to: {out_dir}")
-
-
-if __name__ == "__main__":
-    main()
+print(f"All figures generated in {OUT_DIR}")
