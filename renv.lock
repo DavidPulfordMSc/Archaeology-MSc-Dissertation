@@ -1,1 +1,15 @@
-
+{
+  "R": {
+    "Version": "4.4.0"
+  },
+  "Packages": {
+    "rentrez": {},
+    "dplyr": {},
+    "stringr": {},
+    "readr": {},
+    "tibble": {},
+    "xml2": {},
+    "purrr": {},
+    "digest": {}
+  }
+}
