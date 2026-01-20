@@ -1,0 +1,137 @@
+Study_ID,Gene,Phenotype_domain,Evidence_type
+Dannemann2022_Neuropsychiatric_Behaviour,GLRA1,Circadian,Gene expression / eQTL
+Dannemann2022_Neuropsychiatric_Behaviour,LINC01933,Circadian,Gene expression / eQTL
+Dannemann2022_Neuropsychiatric_Behaviour,NMUR2,Circadian,Gene expression / eQTL
+Dannemann2022_Neuropsychiatric_Behaviour,SCML4,Psychiatric,Functional validation
+Dannemann2022_Neuropsychiatric_Behaviour,CHRNA5,Addiction,Functional validation
+Dannemann2022_Neuropsychiatric_Behaviour,SCN9A,Pain,GWAS/PheWAS association
+Faux2023_SCN9A_Pain,SCN9A,Pain,Functional validation
+Faux2023_SCN9A_Pain,TRPA1,Pain,Mixed / unclear
+Faux2023_SCN9A_Pain,NCX3,Pain,Functional validation
+Faux2023_SCN9A_Pain,CEBPB,Pain,Regulatory analysis
+Zeberg2020_SCN9A_Pain,SCN9A,Pain,Functional validation
+Zeberg2020_SCN9A_Pain,SCN3B,Pain,Functional validation
+McArthur2021_Heritability_Neanderthal,GRB10,Immunological,Gene expression / eQTL
+McArthur2021_Heritability_Neanderthal,BNC2,Mixed / multiple,Regulatory analysis
+McArthur2021_Heritability_Neanderthal,ASB1,Circadian,Regulatory analysis
+McArthur2021_Heritability_Neanderthal,NMUR2,Circadian,Gene expression / eQTL
+Pauly2024_Autism_Neanderthal,STK32C,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,COX10,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,RAD1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,DKK3,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,AARS2,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,POLR1C,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,HDAC7,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,STRA6,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,DDRGK1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,BIRC5,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,CAV3,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,HELZ2,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,ADAMTSL3,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,SLC37A1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,USP47,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,TMEM63B,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,TFEB,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,DNAI3,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,RPF1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,ONECUT1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,RAB7A,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,A2ML1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,RAVER1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,SPO11,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,RAE1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,ECE1,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,SCUBE2,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,DNAAF5,Neurodevelopmental,GWAS/PheWAS association
+Pauly2024_Autism_Neanderthal,SUN1,Neurodevelopmental,GWAS/PheWAS association
+Rinker2020_ReintroducedAlleles,HDHD5,Mixed / multiple,Functional validation
+Rinker2020_ReintroducedAlleles,SDSL,Mixed / multiple,Gene expression / eQTL
+Rinker2020_ReintroducedAlleles,MUC19,Mixed / multiple,GWAS/PheWAS association
+Rinker2020_ReintroducedAlleles,OAS1,Mixed / multiple,Gene expression / eQTL
+Simonti2016_PheWAS_Neanderthal,SELP,Mixed / multiple,GWAS/PheWAS association
+Simonti2016_PheWAS_Neanderthal,F5,Mixed / multiple,Gene expression / eQTL
+Simonti2016_PheWAS_Neanderthal,SLC35F3,Mixed / multiple,GWAS/PheWAS association
+Simonti2016_PheWAS_Neanderthal,STIM1,Neurodevelopmental,Gene expression / eQTL
+Simonti2016_PheWAS_Neanderthal,SLC6A11,Addiction,GWAS/PheWAS association
+Barker2025_Regulatory_TFBS,CUX1,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,CUX2,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,ESRRG,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,FOXP1,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,FOXP2,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,MEF2C,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,POU6F2,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,PRRX1,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,RORA,Neurodevelopmental,Regulatory analysis
+Barker2025_Regulatory_TFBS,MFAP3L,Neurodevelopmental,Gene expression / eQTL
+Barker2025_Regulatory_TFBS,NPTXR,Neurodevelopmental,Gene expression / eQTL
+Barker2025_Regulatory_TFBS,GABRA5,Neurodevelopmental,Gene expression / eQTL
+Trujillo2021_NOVA1_Organoids,NOVA1,Neurodevelopmental,Functional validation
+Caporale2024_HAR202_NPAS3,NPAS3,Neurodevelopmental,Regulatory analysis
+Gittelman2016_AdaptiveIntrogression,OAS1,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,OAS2,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,OAS3,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,TLR1,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,TLR6,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,TLR10,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,TNFAIP3,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,OCA2,Mixed / multiple,Population genetics / introgression
+Gittelman2016_AdaptiveIntrogression,BNC2,Mixed / multiple,Population genetics / introgression
+Kang2023_FunctionalArchaic_eQTLs,OAS1,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,OAS2,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,OAS3,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,TLR1,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,TLR6,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,TLR10,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,TNFAIP3,Mixed / multiple,Gene expression / eQTL
+Kang2023_FunctionalArchaic_eQTLs,OCA2,Mixed / multiple,Population genetics / introgression
+Levi2021_DLX5_6_SocialVocalization,DLX5,Social,Functional validation
+Levi2021_DLX5_6_SocialVocalization,DLX6,Social,Functional validation
+Levi2021_DLX5_6_SocialVocalization,GTF2I,Social,Population genetics / introgression
+Mangan2022_HAQER_NeuroEnhancers,FOXD4,Neurodevelopmental,Regulatory analysis
+Mangan2022_HAQER_NeuroEnhancers,FOXD4L1,Neurodevelopmental,Regulatory analysis
+Mangan2022_HAQER_NeuroEnhancers,EMILIN2,Neurodevelopmental,Regulatory analysis
+Mangan2022_HAQER_NeuroEnhancers,DPP10,Neurodevelopmental,Regulatory analysis
+Mangan2022_HAQER_NeuroEnhancers,ADCYAP1,Neurodevelopmental,Regulatory analysis
+Hsieh2019_AdaptiveCNV_Introgression,TNFRSF10D1,Neurodevelopmental,Population genetics / introgression
+Hsieh2019_AdaptiveCNV_Introgression,TNFRSF10D2,Neurodevelopmental,Population genetics / introgression
+Hsieh2019_AdaptiveCNV_Introgression,NPIPB16,Neurodevelopmental,Population genetics / introgression
+Hsieh2019_AdaptiveCNV_Introgression,ACOT1,Mixed / multiple,Population genetics / introgression
+Hsieh2019_AdaptiveCNV_Introgression,ACOT2,Mixed / multiple,Population genetics / introgression
+Hsieh2019_AdaptiveCNV_Introgression,HEATR4,Mixed / multiple,Gene expression / eQTL
+Hsieh2019_AdaptiveCNV_Introgression,IFNLR1,Mixed / multiple,Population genetics / introgression
+Yermakovich2023_LongRangeRegulation,JUN,Mixed / multiple,Regulatory analysis
+Yermakovich2023_LongRangeRegulation,PRDM5,Mixed / multiple,Regulatory analysis
+Yermakovich2023_LongRangeRegulation,STAT2,Mixed / multiple,Gene expression / eQTL
+Yermakovich2023_LongRangeRegulation,ZNF143,Mixed / multiple,Gene expression / eQTL
+Yermakovich2023_LongRangeRegulation,ZNF189,Mixed / multiple,Gene expression / eQTL
+Yermakovich2023_LongRangeRegulation,FOXP2,Neurodevelopmental,Regulatory analysis
+Yermakovich2023_LongRangeRegulation,ROBO2,Neurodevelopmental,Regulatory analysis
+Yermakovich2023_LongRangeRegulation,IFI16,Mixed / multiple,Gene expression / eQTL
+Rong2023_Splicing_MaPSy,TLR1,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,HSPG2,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,CCDC181,Neurodevelopmental,Functional validation
+Rong2023_Splicing_MaPSy,FAAH,Pain,Functional validation
+Rong2023_Splicing_MaPSy,ADAM7,Neurodevelopmental,Functional validation
+Rong2023_Splicing_MaPSy,VSIG4,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,OTOF,Neurodevelopmental,Functional validation
+Rong2023_Splicing_MaPSy,SLCO1B1,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,KRT71,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,FECH,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,SFTPC,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,OAS1,Mixed / multiple,Functional validation
+Rong2023_Splicing_MaPSy,ADAMTSL3,Psychiatric,Functional validation
+Moriano2020_Regulatory_CorticalDev,HTT,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,FOXP2,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,CHD8,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,CPEB4,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,TCF4,Psychiatric,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,GLI3,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,PHC1,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,RCAN1,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,DYNC1H1,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,SETD1A,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,ASH2L,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,WDR82,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,KDM6A,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,NFIB,Neurodevelopmental,Regulatory analysis
+Moriano2020_Regulatory_CorticalDev,NEUROD6,Neurodevelopmental,Regulatory analysis
